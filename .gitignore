@@ -1,0 +1,53 @@
+# Visual Studio 與 .NET 標準忽略清單
+*.user
+*.userosscache
+*.suo
+*.cache
+*.log
+*.VC.db
+*.vcxproj.user
+
+# Build 輸出目錄
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+
+# NuGet 套件
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+
+# Visual Studio 暫存檔
+.vs/
+.vscode/
+.idea/
+*.swp
+*.*~
+
+# 測試輸出
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# 發佈輸出
+publish/
+app.publish/
+
+# Windows 作業系統檔案
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 其他
+*.orig
+*.rej
+*.bak
+*.tmp
+.DS_Store
