@@ -51,3 +51,6 @@ Desktop.ini
 *.bak
 *.tmp
 .DS_Store
+.vscode/
+.vs/
+.cline/
