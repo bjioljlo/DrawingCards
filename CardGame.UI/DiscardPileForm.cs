@@ -10,7 +10,7 @@ namespace CardGame.UI
     {
         private FlowLayoutPanel pnlDiscardPile;
 
-        public DiscardPileForm(List<Card> discardPile)
+        public DiscardPileForm(DiscardPile discardPile)
         {
             this.Text = "棄牌區";
             this.Size = new Size(500, 250);
@@ -27,7 +27,7 @@ namespace CardGame.UI
             UpdateDiscardPile(discardPile);
         }
 
-        public void UpdateDiscardPile(List<Card> discardPile)
+        public void UpdateDiscardPile(DiscardPile discardPile)
         {
             pnlDiscardPile.Controls.Clear();
             foreach (var card in discardPile)

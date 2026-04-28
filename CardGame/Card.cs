@@ -30,5 +30,10 @@ namespace CardGame
         {
             return HashCode.Combine(Suit, Rank, ID);
         }
+
+        public override string ToString()
+        {
+            return string.IsNullOrEmpty(Name) ? $"{Suit} {Rank}" : Name;
+        }
     }
 }

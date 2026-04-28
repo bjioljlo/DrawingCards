@@ -38,5 +38,45 @@ namespace CardGame
         {
             return _cards.AsReadOnly();
         }
+
+        /// <summary>
+        /// 目前桌面上的牌數
+        /// </summary>
+        public int CurrentCards => _cards.Count;
+
+        /// <summary>
+        /// 桌面是否已滿
+        /// </summary>
+        public bool IsFull => _cards.Count >= MaxCards;
+
+        /// <summary>
+        /// 清空桌面所有牌
+        /// </summary>
+        public void Clear()
+        {
+            _cards.Clear();
+        }
+
+        /// <summary>
+        /// 驗證牌組是否可放置到桌面
+        /// </summary>
+        /// <param name="cards">要放置的卡牌集合</param>
+        /// <returns>可放置時回傳 true，否則回傳 false</returns>
+        public bool IsValidMove(IEnumerable<Card> cards)
+        {
+            ArgumentNullException.ThrowIfNull(cards);
+            var cardList = cards.ToList();
+            
+            if (cardList.Count == 0)
+                return false;
+            
+            if (_cards.Count + cardList.Count > MaxCards)
+                return false;
+            
+            if (cardList.Any(c => c == null))
+                return false;
+
+            return true;
+        }
     }
 }

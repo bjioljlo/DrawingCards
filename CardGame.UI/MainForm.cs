@@ -717,7 +717,7 @@ namespace CardGame.UI
             g.DrawString("棄牌堆", new Font("Segoe UI", 12), Brushes.White, new PointF(10, 45));
             if (player.DiscardPile.Count > 0)
             {
-                var lastCard = player.DiscardPile[^1];
+                var lastCard = player.DiscardPile.Cards[^1];
                 g.DrawString(lastCard.Name, new Font("Segoe UI", 9), Brushes.Yellow, new PointF(10, 70));
             }
         }

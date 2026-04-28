@@ -47,6 +47,54 @@ namespace CardGame
         }
 
         /// <summary>
+        /// 加入多張牌到手牌
+        /// </summary>
+        /// <param name="cards">要加入的卡牌集合</param>
+        /// <exception cref="ArgumentNullException">當 cards 為 null 時擲出</exception>
+        public void AddRange(IEnumerable<Card> cards)
+        {
+            ArgumentNullException.ThrowIfNull(cards);
+            foreach (var card in cards)
+            {
+                ArgumentNullException.ThrowIfNull(card);
+                _cards.Add(card);
+            }
+        }
+
+        /// <summary>
+        /// 移除多張指定牌
+        /// </summary>
+        /// <param name="cards">要移除的卡牌集合</param>
+        /// <exception cref="ArgumentNullException">當 cards 為 null 時擲出</exception>
+        /// <exception cref="InvalidOperationException">當任何卡牌不在手牌中時擲出</exception>
+        public void DiscardRange(IEnumerable<Card> cards)
+        {
+            ArgumentNullException.ThrowIfNull(cards);
+            var cardsToDiscard = cards.ToList();
+            
+            // 先確認所有卡牌都存在才開始移除
+            foreach (var card in cardsToDiscard)
+            {
+                if (!_cards.Contains(card))
+                    throw new InvalidOperationException($"Card not found in hand: {card}");
+            }
+
+            foreach (var card in cardsToDiscard)
+            {
+                _cards.Remove(card);
+            }
+        }
+
+        /// <summary>
+        /// 取得所有手牌內容
+        /// </summary>
+        /// <returns>所有手牌的唯讀複本</returns>
+        public IReadOnlyList<Card> GetAll()
+        {
+            return _cards.ToList().AsReadOnly();
+        }
+
+        /// <summary>
         /// Returns the number of cards in hand.
         /// </summary>
         public int Count => _cards.Count;

@@ -149,7 +149,7 @@ namespace CardGame
 
             foreach (var player in _players)
             {
-                if (player.Hand.Cards.Contains(_targetCard) || player.DiscardPile.Contains(_targetCard))
+                if (player.Hand.Cards.Contains(_targetCard) || player.DiscardPile.Cards.Contains(_targetCard))
                 {
                     VictoryConditionMet?.Invoke(VictoryCondition.SpecificCard);
                     return true;
