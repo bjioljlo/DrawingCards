@@ -45,10 +45,6 @@ public class SolitaireForm : Form
                 else _game.DrawFromStock();
                 _canvas.ClearSel();
                 break;
-            case ClickAction.Waste:
-                if (_game.Waste.IsEmpty) return;
-                _canvas.SelectWaste(_game.Waste.TopCard!);
-                break;
             case ClickAction.WasteToFoundation:
                 _game.MoveFromWasteToFoundation(e.Index);
                 _canvas.ClearSel();
@@ -67,10 +63,6 @@ public class SolitaireForm : Form
                     _canvas.ClearSel();
                 }
                 break;
-            case ClickAction.SelectCard:
-                if (e.MovableCards != null)
-                    _canvas.SelectCard(e.Col, e.CardIndex, _game.Tableaus[e.Col].Cards[e.CardIndex]);
-                break;
             case ClickAction.MoveTableauToTableau:
                 _game.MoveCard(e.FromCol, e.Col, e.FromCardIndex);
                 _canvas.ClearSel();
@@ -82,7 +74,7 @@ public class SolitaireForm : Form
         }
         _lblMoves.Text = $"移動次數: {_game.MovesCount}";
         if (_game.CheckWin()) { _lblState.Text = "\u2728 你贏了！ \u2728"; _lblState.ForeColor = Color.Gold; }
-        _canvas.Invalidate();
+        _canvas.Refresh();
     }
 
     private void NewGame()
@@ -96,11 +88,11 @@ public class SolitaireForm : Form
         _canvas.SetGame(_game);
         _lblState.Text = "遊戲進行中"; _lblState.ForeColor = Color.LightGreen;
         _lblMoves.Text = "移動次數: 0";
-        _canvas.Invalidate();
+        _canvas.Refresh();
     }
 }
 
-internal enum ClickAction { None, Stock, Waste, WasteToFoundation, FoundationFromWaste, FoundationFromTableau, SelectCard, MoveTableauToTableau, WasteToTableau }
+internal enum ClickAction { None, Stock, WasteToFoundation, FoundationFromWaste, FoundationFromTableau, MoveTableauToTableau, WasteToTableau }
 
 internal class GameClickEventArgs : EventArgs
 {
@@ -110,7 +102,6 @@ internal class GameClickEventArgs : EventArgs
     public int CardIndex { get; init; }
     public int FromCol { get; init; }
     public int FromCardIndex { get; init; }
-    public IReadOnlyList<global::CardGame.Card>? MovableCards { get; init; }
 }
 
 internal class SolitaireCanvas : Control
@@ -139,8 +130,6 @@ internal class SolitaireCanvas : Control
 
     public void SetGame(CardGameSolitaire.KlondikeGame game) { _game = game; }
     public void ClearSel() { SelectedCard = null; SelectedTableauCol = null; _selectedCardIndex = null; }
-    public void SelectCard(int col, int idx, global::CardGame.Card card) { SelectedCard = card; SelectedTableauCol = col; _selectedCardIndex = idx; }
-    public void SelectWaste(global::CardGame.Card card) { SelectedCard = card; SelectedTableauCol = null; _selectedCardIndex = null; }
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -228,16 +217,27 @@ internal class SolitaireCanvas : Control
             return;
         }
 
-        // Waste
+        // Waste -> select or put to foundation
         if (_wr.Contains(p) && !_game.Waste.IsEmpty)
         {
             if (SelectedCard != null && SelectedTableauCol == null)
             {
-                GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.None });
+                // Try each foundation
+                for (int i = 0; i < 4; i++)
+                {
+                    if (_game.Foundations[i].CanPlace(SelectedCard))
+                    {
+                        GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.WasteToFoundation, Index = i });
+                        Invalidate();
+                        return;
+                    }
+                }
                 ClearSel(); Invalidate();
                 return;
             }
-            SelectWaste(_game.Waste.TopCard!);
+            SelectedCard = _game.Waste.TopCard;
+            SelectedTableauCol = null;
+            _selectedCardIndex = null;
             Invalidate();
             return;
         }
@@ -248,8 +248,8 @@ internal class SolitaireCanvas : Control
             if (!_fr[i].Contains(p)) continue;
             if (SelectedCard == null) return;
             if (SelectedTableauCol == null)
-                GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.FoundationFromWaste, Index = i });
-            else if (SelectedTableauCol.HasValue)
+                GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.WasteToFoundation, Index = i });
+            else
                 GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.FoundationFromTableau, Index = i });
             return;
         }
@@ -261,6 +261,7 @@ internal class SolitaireCanvas : Control
             if (p.X < cr.X || p.X > cr.X + CW) continue;
             var pile = _game.Tableaus[c];
 
+            // Find clicked card by Y position
             int ci = -1, y = cr.Y;
             for (int i = 0; i < pile.Cards.Count; i++)
             {
@@ -284,6 +285,7 @@ internal class SolitaireCanvas : Control
             // Clicked a card
             if (SelectedCard == null)
             {
+                // Only selectable if the cascade from here is valid
                 var movable = pile.GetMovableCards(ci);
                 if (movable != null)
                 {
