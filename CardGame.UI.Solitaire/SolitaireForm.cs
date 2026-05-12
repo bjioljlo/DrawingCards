@@ -27,6 +27,7 @@ public class SolitaireForm : Form
 
     // UI elements
     private Panel _topPanel = null!;
+    private Panel _tableauPanel = null!;
     private Button _btnNewGame = null!;
     private Label _lblMoves = null!;
     private Label _lblState = null!;
@@ -40,6 +41,9 @@ public class SolitaireForm : Form
         DoubleBuffered = true;
 
         InitializeComponents();
+        // Layout foundationRects now so they're ready for Paint
+        for (int i = 0; i < 4; i++)
+            _foundationRects[i] = new Rectangle(FoundationStartX + i * FoundationSpacing, 40, CardWidth, CardHeight);
         Size = new Size(800, 680);
     }
 
@@ -62,24 +66,22 @@ public class SolitaireForm : Form
         };
         _topPanel.Controls.Add(topLabel);
 
-        // Stock area — draw on top panel
         _stockRect = new Rectangle(20, 40, CardWidth, CardHeight);
         _wasteRect = new Rectangle(105, 40, CardWidth, CardHeight);
 
         _topPanel.Paint += TopPanel_Paint;
         _topPanel.MouseClick += TopPanel_MouseClick;
-
         Controls.Add(_topPanel);
 
-        // Tableau panel — main area
-        var tableauPanel = new Panel
+        // Tableau panel — store as field so we can invalidate it
+        _tableauPanel = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = Color.DarkGreen
         };
-        tableauPanel.Paint += TableauPanel_Paint;
-        tableauPanel.MouseClick += TableauPanel_MouseClick;
-        Controls.Add(tableauPanel);
+        _tableauPanel.Paint += TableauPanel_Paint;
+        _tableauPanel.MouseClick += TableauPanel_MouseClick;
+        Controls.Add(_tableauPanel);
 
         // Status bar
         var statusPanel = new Panel
@@ -122,18 +124,16 @@ public class SolitaireForm : Form
         statusPanel.Controls.Add(_lblState);
     }
 
-    private void ComputeLayout(Panel tableauPanel)
+    private void ComputeTableauLayout()
     {
+        if (_tableauPanel == null) return;
         int baseX = 15;
         int baseY = 10;
-        int w = tableauPanel.ClientSize.Width;
+        int w = _tableauPanel.ClientSize.Width;
         int colWidth = Math.Min(ColumnWidth, (w - 30) / 7);
 
         for (int i = 0; i < 7; i++)
-            _tableauColumns[i] = new Rectangle(baseX + i * colWidth, baseY, CardWidth, tableauPanel.ClientSize.Height - baseY - 5);
-
-        for (int i = 0; i < 4; i++)
-            _foundationRects[i] = new Rectangle(FoundationStartX + i * FoundationSpacing, 40, CardWidth, CardHeight);
+            _tableauColumns[i] = new Rectangle(baseX + i * colWidth, baseY, CardWidth, _tableauPanel.ClientSize.Height - baseY - 5);
     }
 
     // ==================== TOP PANEL ====================
@@ -141,6 +141,7 @@ public class SolitaireForm : Form
     private void TopPanel_Paint(object? sender, PaintEventArgs e)
     {
         var g = e.Graphics;
+        g.Clear(Color.ForestGreen);
 
         // Title
         using var titleFont = new Font("Segoe UI", 14, FontStyle.Bold);
@@ -168,7 +169,8 @@ public class SolitaireForm : Form
 
         // Waste pile
         if (_game != null && !_game.Waste.IsEmpty)
-            DrawCard(g, _game.Waste.TopCard!, _wasteRect, false, _selectedCard != null && _selectedTableauCol == null && _selectedCard == _game.Waste.TopCard);
+            DrawCard(g, _game.Waste.TopCard!, _wasteRect, false,
+                _selectedCard != null && _selectedTableauCol == null && _selectedCard == _game.Waste.TopCard);
         else
             DrawEmptySlot(g, _wasteRect, "廢牌");
 
@@ -203,14 +205,13 @@ public class SolitaireForm : Form
             _selectedCard = null;
             _selectedTableauCol = null;
             _selectedCardIndex = null;
-            Refresh();
+            InvalidatePanels();
             return;
         }
 
         // Waste click
         if (_wasteRect.Contains(e.Location) && !_game.Waste.IsEmpty)
         {
-            // If already selected from waste, try to place on foundation
             if (_selectedCard != null && _selectedTableauCol == null)
             {
                 for (int i = 0; i < 4; i++)
@@ -219,20 +220,20 @@ public class SolitaireForm : Form
                     {
                         _game.MoveFromWasteToFoundation(i);
                         _selectedCard = null;
-                        Refresh();
+                        InvalidatePanels();
                         CheckWin();
                         return;
                     }
                 }
                 _selectedCard = null;
-                Refresh();
+                InvalidatePanels();
                 return;
             }
 
             _selectedCard = _game.Waste.TopCard;
             _selectedTableauCol = null;
             _selectedCardIndex = null;
-            Refresh();
+            InvalidatePanels();
             return;
         }
 
@@ -247,7 +248,7 @@ public class SolitaireForm : Form
                 {
                     _game.MoveFromWasteToFoundation(i);
                     _selectedCard = null;
-                    Refresh();
+                    InvalidatePanels();
                     CheckWin();
                 }
                 return;
@@ -261,7 +262,7 @@ public class SolitaireForm : Form
                     _selectedCard = null;
                     _selectedTableauCol = null;
                     _selectedCardIndex = null;
-                    Refresh();
+                    InvalidatePanels();
                     CheckWin();
                 }
             }
@@ -273,11 +274,20 @@ public class SolitaireForm : Form
 
     private void TableauPanel_Paint(object? sender, PaintEventArgs e)
     {
-        if (_game == null) return;
+        if (_game == null)
+        {
+            // Draw empty slots so the area isn't blank
+            ComputeTableauLayout();
+            var g = e.Graphics;
+            g.Clear(Color.DarkGreen);
+            for (int col = 0; col < 7; col++)
+                DrawEmptySlot(g, new Rectangle(_tableauColumns[col].X, _tableauColumns[col].Y, CardWidth, CardHeight), "");
+            return;
+        }
 
-        var g = e.Graphics;
-        var panel = (Panel)sender!;
-        ComputeLayout(panel);
+        var g2 = e.Graphics;
+        ComputeTableauLayout();
+        g2.Clear(Color.DarkGreen);
 
         for (int col = 0; col < 7; col++)
         {
@@ -286,7 +296,7 @@ public class SolitaireForm : Form
 
             if (pile.IsEmpty)
             {
-                DrawEmptySlot(g, new Rectangle(colRect.X, colRect.Y, CardWidth, CardHeight), "");
+                DrawEmptySlot(g2, new Rectangle(colRect.X, colRect.Y, CardWidth, CardHeight), "");
                 continue;
             }
 
@@ -300,11 +310,11 @@ public class SolitaireForm : Form
                 if (isFaceUp)
                 {
                     bool isSelected = _selectedCard == card && _selectedTableauCol == col;
-                    DrawCard(g, card, cardRect, true, isSelected);
+                    DrawCard(g2, card, cardRect, true, isSelected);
                 }
                 else
                 {
-                    DrawFaceDown(g, cardRect);
+                    DrawFaceDown(g2, cardRect);
                 }
 
                 yOffset += isFaceUp ? CardOverlap : 5;
@@ -317,8 +327,7 @@ public class SolitaireForm : Form
         if (_game == null || _game.State != CardGameSolitaire.KlondikeGame.GameState.Playing)
             return;
 
-        var panel = (Panel)sender!;
-        ComputeLayout(panel);
+        ComputeTableauLayout();
 
         // Find which column was clicked
         for (int col = 0; col < 7; col++)
@@ -344,12 +353,8 @@ public class SolitaireForm : Form
                 yOffset += isFaceUp ? CardOverlap : 5;
             }
 
-            // If click is below all cards, it's an empty column click
-            if (cardIndex == -1 && pile.IsEmpty)
-                cardIndex = -1;
-
-            // Empty column click
-            if (cardIndex == -1 || pile.IsEmpty)
+            // Click below all cards in a column = treat as empty column click
+            if (cardIndex == -1)
             {
                 if (_selectedCard == null) return;
 
@@ -360,7 +365,7 @@ public class SolitaireForm : Form
                     {
                         _game.MoveFromWasteToTableau(col);
                         _selectedCard = null;
-                        Refresh();
+                        InvalidatePanels();
                         CheckWin();
                     }
                     return;
@@ -374,7 +379,7 @@ public class SolitaireForm : Form
                         _selectedCard = null;
                         _selectedTableauCol = null;
                         _selectedCardIndex = null;
-                        Refresh();
+                        InvalidatePanels();
                     }
                     return;
                 }
@@ -391,7 +396,7 @@ public class SolitaireForm : Form
                     _selectedCard = card;
                     _selectedTableauCol = col;
                     _selectedCardIndex = cardIndex;
-                    Refresh();
+                    InvalidatePanels();
                 }
                 return;
             }
@@ -404,7 +409,7 @@ public class SolitaireForm : Form
                     _selectedCard = null;
                     _selectedTableauCol = null;
                     _selectedCardIndex = null;
-                    Refresh();
+                    InvalidatePanels();
                     return;
                 }
 
@@ -414,7 +419,7 @@ public class SolitaireForm : Form
                     _selectedCard = null;
                     _selectedTableauCol = null;
                     _selectedCardIndex = null;
-                    Refresh();
+                    InvalidatePanels();
                     CheckWin();
                 }
                 return;
@@ -428,7 +433,7 @@ public class SolitaireForm : Form
                 _selectedCard = null;
                 _selectedTableauCol = null;
                 _selectedCardIndex = null;
-                Refresh();
+                InvalidatePanels();
                 CheckWin();
             }
             else
@@ -436,7 +441,7 @@ public class SolitaireForm : Form
                 _selectedCard = null;
                 _selectedTableauCol = null;
                 _selectedCardIndex = null;
-                Refresh();
+                InvalidatePanels();
             }
             return;
         }
@@ -477,7 +482,7 @@ public class SolitaireForm : Form
         using var borderPen = new Pen(Color.Black, 1);
         g.DrawRectangle(borderPen, rect);
 
-        // Pattern
+        // Pattern: cross-hatch
         using var patternPen = new Pen(Color.Navy, 1);
         g.DrawLine(patternPen, rect.Left + 2, rect.Top + 2, rect.Right - 2, rect.Bottom - 2);
         g.DrawLine(patternPen, rect.Right - 2, rect.Top + 2, rect.Left + 2, rect.Bottom - 2);
@@ -515,6 +520,13 @@ public class SolitaireForm : Form
 
     // ==================== GAME ====================
 
+    private void InvalidatePanels()
+    {
+        _topPanel.Invalidate();
+        _tableauPanel.Invalidate();
+        _lblMoves.Text = _game != null ? $"移動次數: {_game.MovesCount}" : "移動次數: 0";
+    }
+
     private void BtnNewGame_Click(object? sender, EventArgs e)
     {
         StartNewGame();
@@ -528,10 +540,9 @@ public class SolitaireForm : Form
         _selectedCard = null;
         _selectedTableauCol = null;
         _selectedCardIndex = null;
-        _lblMoves.Text = $"移動次數: 0";
         _lblState.Text = "遊戲進行中";
         _lblState.ForeColor = Color.LightGreen;
-        Refresh();
+        InvalidatePanels();
     }
 
     private static List<global::CardGame.Card> CreateStandardDeck()
