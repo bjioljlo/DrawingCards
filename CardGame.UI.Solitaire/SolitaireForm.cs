@@ -522,8 +522,8 @@ public class SolitaireForm : Form
 
     private void InvalidatePanels()
     {
-        _topPanel.Invalidate();
-        _tableauPanel.Invalidate();
+        _topPanel.Refresh();
+        _tableauPanel.Refresh();
         _lblMoves.Text = _game != null ? $"移動次數: {_game.MovesCount}" : "移動次數: 0";
     }
 

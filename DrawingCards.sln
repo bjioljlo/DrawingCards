@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Solitaire.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.UI.Solitaire", "CardGame.UI.Solitaire\CardGame.UI.Solitaire.csproj", "{30122F4F-D2F2-47D8-B444-9EB5D76B0677}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.UI.Solitaire.Tests", "CardGame.UI.Solitaire.Tests\CardGame.UI.Solitaire.Tests.csproj", "{F683279B-1364-4B7B-8BD9-745E5F9A168B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{30122F4F-D2F2-47D8-B444-9EB5D76B0677}.Release|x64.Build.0 = Release|Any CPU
 		{30122F4F-D2F2-47D8-B444-9EB5D76B0677}.Release|x86.ActiveCfg = Release|Any CPU
 		{30122F4F-D2F2-47D8-B444-9EB5D76B0677}.Release|x86.Build.0 = Release|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Debug|x64.Build.0 = Debug|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Debug|x86.Build.0 = Debug|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Release|x64.ActiveCfg = Release|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Release|x64.Build.0 = Release|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Release|x86.ActiveCfg = Release|Any CPU
+		{F683279B-1364-4B7B-8BD9-745E5F9A168B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
