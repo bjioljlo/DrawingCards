@@ -19,15 +19,33 @@ public class SolitaireForm : Form
         Controls.Add(_canvas);
 
         var sp = new Panel { Dock = DockStyle.Bottom, Height = 50, BackColor = Color.DimGray };
-        var btn = new Button { Text = "新遊戲", Location = new Point(10, 8), Size = new Size(100, 34),
-            FlatStyle = FlatStyle.Flat, BackColor = Color.WhiteSmoke };
+        var btn = new Button
+        {
+            Text = "新遊戲",
+            Location = new Point(10, 8),
+            Size = new Size(100, 34),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.WhiteSmoke
+        };
         btn.Click += (_, _) => NewGame();
         sp.Controls.Add(btn);
-        _lblMoves = new Label { Text = "移動次數: 0", Location = new Point(140, 12), Size = new Size(120, 30),
-            ForeColor = Color.White, Font = new Font("Segoe UI", 11, FontStyle.Bold) };
+        _lblMoves = new Label
+        {
+            Text = "移動次數: 0",
+            Location = new Point(140, 12),
+            Size = new Size(120, 30),
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 11, FontStyle.Bold)
+        };
         sp.Controls.Add(_lblMoves);
-        _lblState = new Label { Text = "點擊「新遊戲」開始", Location = new Point(300, 12), Size = new Size(300, 30),
-            ForeColor = Color.LightGreen, Font = new Font("Segoe UI", 11) };
+        _lblState = new Label
+        {
+            Text = "點擊「新遊戲」開始",
+            Location = new Point(300, 12),
+            Size = new Size(300, 30),
+            ForeColor = Color.LightGreen,
+            Font = new Font("Segoe UI", 11)
+        };
         sp.Controls.Add(_lblState);
         Controls.Add(sp);
 
@@ -50,9 +68,9 @@ public class SolitaireForm : Form
                 _canvas.ClearSel();
                 break;
             case ClickAction.FoundationFromTableau:
-                if (_game.Foundations[e.Index].CanPlace(_canvas.SelectedCard!))
+                if (_canvas.SelectedTableauCol.HasValue && _game.Foundations[e.Index].CanPlace(_canvas.SelectedCard!))
                 {
-                    _game.MoveToFoundation(_canvas.SelectedTableauCol!.Value, e.Index);
+                    _game.MoveToFoundation(_canvas.SelectedTableauCol.Value, e.Index);
                     _canvas.ClearSel();
                 }
                 break;
@@ -306,7 +324,12 @@ internal class SolitaireCanvas : Control
             }
 
             if (pile.CanPlace(SelectedCard))
-                GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.MoveTableauToTableau, Col = c, FromCol = SelectedTableauCol!.Value, FromCardIndex = _selectedCardIndex ?? 0 });
+            {
+                if (SelectedTableauCol.HasValue)
+                    GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.MoveTableauToTableau, Col = c, FromCol = SelectedTableauCol.Value, FromCardIndex = _selectedCardIndex ?? 0 });
+                else
+                    GameClicked?.Invoke(this, new GameClickEventArgs { Action = ClickAction.WasteToTableau, Col = c });
+            }
             else
             { ClearSel(); Invalidate(); }
             return;
@@ -314,19 +337,25 @@ internal class SolitaireCanvas : Control
     }
 
     private static void DrawSlot(Graphics g, Rectangle r, string s)
-    { using var p = new Pen(Color.FromArgb(0, 100, 0), 2); g.DrawRectangle(p, r);
-        if (s != "") { using var f = new Font("Segoe UI", 8); g.DrawString(s, f, Brushes.DarkGray, r.X + 15, r.Y + 40); } }
+    {
+        using var p = new Pen(Color.FromArgb(0, 100, 0), 2); g.DrawRectangle(p, r);
+        if (s != "") { using var f = new Font("Segoe UI", 8); g.DrawString(s, f, Brushes.DarkGray, r.X + 15, r.Y + 40); }
+    }
     private static void DrawDown(Graphics g, Rectangle r)
-    { g.FillRectangle(Brushes.DarkBlue, r); g.DrawRectangle(Pens.Black, r);
+    {
+        g.FillRectangle(Brushes.DarkBlue, r); g.DrawRectangle(Pens.Black, r);
         using var p = new Pen(Color.Navy); g.DrawLine(p, r.Left + 2, r.Top + 2, r.Right - 2, r.Bottom - 2);
-        g.DrawLine(p, r.Right - 2, r.Top + 2, r.Left + 2, r.Bottom - 2); }
+        g.DrawLine(p, r.Right - 2, r.Top + 2, r.Left + 2, r.Bottom - 2);
+    }
     private static void DrawCard(Graphics g, global::CardGame.Card c, Rectangle r, bool sel)
-    { g.FillRectangle(new SolidBrush(sel ? Color.LightYellow : Color.White), r);
+    {
+        g.FillRectangle(new SolidBrush(sel ? Color.LightYellow : Color.White), r);
         bool red = c.Suit is "Hearts" or "Diamonds";
         using var sb = new SolidBrush(red ? Color.Red : Color.Black);
         using var bp = new Pen(sel ? Color.Blue : Color.Black, sel ? 3 : 1); g.DrawRectangle(bp, r);
         using var rf = new Font("Segoe UI", 11, FontStyle.Bold); g.DrawString(c.Rank, rf, sb, r.X + 4, r.Y + 2);
         string sym = c.Suit switch { "Spades" => "\u2660", "Hearts" => "\u2665", "Diamonds" => "\u2666", "Clubs" => "\u2663", _ => "?" };
         using var sf = new Font("Segoe UI", 10); g.DrawString(sym, sf, sb, r.X + 6, r.Y + 20);
-        using var cf = new Font("Segoe UI", 28); g.DrawString(sym, cf, sb, r.X + 18, r.Y + 50); }
+        using var cf = new Font("Segoe UI", 28); g.DrawString(sym, cf, sb, r.X + 18, r.Y + 50);
+    }
 }

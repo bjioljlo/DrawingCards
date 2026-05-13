@@ -14,6 +14,17 @@
       "cwd": "${workspaceFolder}/CardGame",
       "stopAtEntry": false,
       "console": "internalConsole"
+    },
+    {
+      "name": ".NET WinForms 啟動2",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/CardGame.UI.Solitaire/bin/Debug/net9.0-windows/CardGame.UI.Solitaire.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/CardGame.UI.Solitaire",
+      "stopAtEntry": false,
+      "console": "internalConsole"
     }
   ]
 }

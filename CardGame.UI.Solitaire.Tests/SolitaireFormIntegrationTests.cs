@@ -131,6 +131,79 @@ public class SolitaireFormIntegrationTests
             Assert.NotNull(game.Waste.TopCard);
         });
     }
+
+    [STAThread]
+    [Fact]
+    public void SelectingWasteCard_ThenClickingTableau_ShouldMoveWithoutNullReference()
+    {
+        RunSta(() =>
+        {
+            using var form = new SolitaireForm();
+            form.CreateControl();
+
+            var game = new CardGame.Solitaire.KlondikeGame(new List<CardGame.Card>())!;
+            var gameField = typeof(SolitaireForm).GetField("_game",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(gameField);
+
+            var waste = new CardGame.Solitaire.WastePile();
+            waste.Add(new CardGame.Card("Hearts", "5", "5 of Hearts", "", "", 5));
+
+            var tableau = new CardGame.Solitaire.TableauPile(0);
+            var addFaceUpMethod = typeof(CardGame.Solitaire.TableauPile).GetMethod("AddFaceUp",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(addFaceUpMethod);
+            addFaceUpMethod!.Invoke(tableau, new object[] { new CardGame.Card("Clubs", "6", "6 of Clubs", "", "", 6) });
+
+            var tableaus = new List<CardGame.Solitaire.TableauPile> { tableau };
+            for (int i = 1; i < 7; i++)
+                tableaus.Add(new CardGame.Solitaire.TableauPile(i));
+
+            var foundations = new List<CardGame.Solitaire.FoundationPile>();
+            for (int i = 0; i < 4; i++)
+                foundations.Add(new CardGame.Solitaire.FoundationPile());
+
+            gameField.SetValue(form, game);
+            var canvasField = typeof(SolitaireForm).GetField("_canvas", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(canvasField);
+            var canvas = canvasField.GetValue(form) as Control;
+            Assert.NotNull(canvas);
+            var canvasType = canvas!.GetType();
+
+            const BindingFlags props = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            game.GetType().GetProperty("State", props)!
+                .SetValue(game, CardGame.Solitaire.KlondikeGame.GameState.Playing);
+            game.GetType().GetProperty("Stock", props)!
+                .SetValue(game, new CardGame.Solitaire.StockPile(Enumerable.Empty<CardGame.Card>()));
+            game.GetType().GetProperty("Waste", props)!
+                .SetValue(game, waste);
+            game.GetType().GetProperty("Tableaus", props)!
+                .SetValue(game, tableaus.AsReadOnly());
+            game.GetType().GetProperty("Foundations", props)!
+                .SetValue(game, foundations.AsReadOnly());
+
+            var setGameMethod = canvasType.GetMethod("SetGame",
+                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            Assert.NotNull(setGameMethod);
+            setGameMethod!.Invoke(canvas, new object[] { game });
+
+            var selectedCardField = canvasType.GetField("<SelectedCard>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance);
+            var selectedTableauColField = canvasType.GetField("<SelectedTableauCol>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance);
+            var selectedCardIndexField = canvasType.GetField("_selectedCardIndex", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(selectedCardField);
+            Assert.NotNull(selectedTableauColField);
+            Assert.NotNull(selectedCardIndexField);
+
+            selectedCardField!.SetValue(canvas, waste.TopCard);
+            selectedTableauColField!.SetValue(canvas, null);
+            selectedCardIndexField!.SetValue(canvas, null);
+
+            canvas.InvokeMouse(new MouseEventArgs(MouseButtons.Left, 1, 55, 180, 0));
+
+            Assert.True(game.Waste.IsEmpty);
+            Assert.Equal("5", game.Tableaus[0].TopCard?.Rank);
+        });
+    }
 }
 
 internal static class ControlExtensions
