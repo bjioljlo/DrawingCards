@@ -11,8 +11,8 @@ public class KlondikeGameTests
         var ranks = new[] { "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" };
         var cards = new List<Card>();
         foreach (var suit in suits)
-        foreach (var rank in ranks)
-            cards.Add(MakeCard(suit, rank));
+            foreach (var rank in ranks)
+                cards.Add(MakeCard(suit, rank));
         return cards;
     }
 
@@ -123,6 +123,49 @@ public class KlondikeGameTests
         Assert.True(game.Waste.Cards.Count > 0);
         game.RecycleWaste();
         Assert.True(game.Waste.IsEmpty);
+    }
+
+    [Fact]
+    public void RecycleWaste_ShouldPreserveCardOrder()
+    {
+        // 測試：回收後出牌順序應保持一致
+        var deck = new List<Card>();
+        // 至少需要 28 張用於 tableau 配置，再加至少 3 張用於測試
+        for (int i = 0; i < 35; i++)
+        {
+            int suitIndex = i / 13;
+            int rankIndex = i % 13;
+            var suits = new[] { "Spades", "Hearts", "Diamonds", "Clubs" };
+            var ranks = new[] { "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" };
+            deck.Add(MakeCard(suits[suitIndex % 4], ranks[rankIndex]));
+        }
+
+        var game = new KlondikeGame(deck);
+        game.StartGame();
+
+        // 抽出前 3 張牌，記錄順序
+        var firstRound = new List<string>();
+        game.DrawFromStock();
+        firstRound.Add(game.Waste.TopCard!.Rank);
+        game.DrawFromStock();
+        firstRound.Add(game.Waste.TopCard!.Rank);
+        game.DrawFromStock();
+        firstRound.Add(game.Waste.TopCard!.Rank);
+
+        // 回收
+        game.RecycleWaste();
+
+        // 再抽相同數量的牌
+        var secondRound = new List<string>();
+        game.DrawFromStock();
+        secondRound.Add(game.Waste.TopCard!.Rank);
+        game.DrawFromStock();
+        secondRound.Add(game.Waste.TopCard!.Rank);
+        game.DrawFromStock();
+        secondRound.Add(game.Waste.TopCard!.Rank);
+
+        // 驗證：第二輪應該與第一輪順序相同
+        Assert.Equal(firstRound, secondRound);
     }
 
     [Fact]

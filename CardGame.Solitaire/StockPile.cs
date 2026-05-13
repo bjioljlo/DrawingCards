@@ -20,7 +20,7 @@ public class StockPile
     public void ResetFromWaste(WastePile waste)
     {
         var recycled = waste.TakeAll();
-        recycled.Reverse();
+        // TakeAll 已經返回反向順序的牌，直接 Push 即可保持原有出牌順序
         foreach (var card in recycled)
             _cards.Push(card);
     }
